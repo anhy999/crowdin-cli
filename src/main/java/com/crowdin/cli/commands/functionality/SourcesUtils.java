@@ -19,32 +19,13 @@ import java.util.stream.Stream;
 import static java.util.Arrays.asList;
 
 public class SourcesUtils {
-
-    private static final String DOUBLED_ASTERISK = "**";
-    private static final String REGEX = "regex";
-    private static final String ASTERISK = "*";
-    private static final String QUESTION_MARK = "?";
-    private static final String DOT = ".";
-    private static final String DOT_PLUS = ".+";
-    private static final String SET_OPEN_BRECKET = "[";
-    private static final String SET_CLOSE_BRECKET = "]";
-    private static final String ROUND_BRACKET_OPEN = "(";
-    private static final String ROUND_BRACKET_CLOSE = ")";
-    private static final String ESCAPE_ROUND_BRACKET_OPEN = "\\(";
-    private static final String ESCAPE_ROUND_BRACKET_CLOSE = "\\)";
-    private static final String ESCAPE_DOT = "\\.";
-    private static final String ESCAPE_DOT_PLACEHOLDER = "{ESCAPE_DOT}";
-    private static final String ESCAPE_QUESTION = "\\?";
-    private static final String ESCAPE_QUESTION_PLACEHOLDER = "{ESCAPE_QUESTION_MARK}";
-    private static final String ESCAPE_ASTERISK = "\\*";
-    private static final String ESCAPE_ASTERISK_PLACEHOLDER = "{ESCAPE_ASTERISK}";
-
     public static Stream<File> getFiles(String basePath, String sourcePattern, List<String> ignorePattern, PlaceholderUtil placeholderUtil) {
         if (basePath == null || sourcePattern == null || placeholderUtil == null) {
             throw new NullPointerException("null args in SourceUtils.getFiles");
         }
         FileHelper fileHelper = new FileHelper(basePath);
-        List<File> sources = fileHelper.getFiles(sourcePattern);
+        String relativePath = StringUtils.removeStart(sourcePattern, basePath);
+        List<File> sources = fileHelper.getFiles(relativePath);
         List<String> formattedIgnores = placeholderUtil.format(sources, ignorePattern, false);
         return fileHelper.filterOutIgnoredFiles(sources, formattedIgnores)
             .stream()
@@ -54,10 +35,11 @@ public class SourcesUtils {
     public static List<String> filterProjectFiles(
         List<String> filePaths, String sourcePattern, List<String> ignorePatterns, boolean preserveHierarchy, PlaceholderUtil placeholderUtil
     ) {
-        filePaths = filePaths.stream().map(Utils::unixPath).map(Utils::noSepAtStart).collect(Collectors.toList());
-        sourcePattern = Utils.noSepAtStart(Utils.unixPath(sourcePattern));
+        filePaths = filePaths.stream().map((Utils.isWindows() ? Utils::windowsPath : Utils::unixPath)).map(Utils::noSepAtStart).collect(Collectors.toList());
+        sourcePattern = Utils.noSepAtStart(Utils.isWindows() ? Utils.windowsPath(sourcePattern) : Utils.unixPath(sourcePattern));
         ignorePatterns = (ignorePatterns != null)
-            ? ignorePatterns.stream().map(Utils::unixPath).map(Utils::noSepAtStart).collect(Collectors.toList()) : Collections.emptyList();
+            ? ignorePatterns.stream().map((Utils.isWindows() ? Utils::windowsPath : Utils::unixPath)).map(Utils::noSepAtStart).collect(Collectors.toList()) : Collections.emptyList();
+
         Predicate<String> sourcePredicate;
         Predicate<String> ignorePredicate;
         if (preserveHierarchy) {
@@ -68,7 +50,7 @@ public class SourcesUtils {
                 .map(Predicate::negate)
                 .reduce((s) -> true, Predicate::and);
         } else {
-            List<Pattern> patternPaths = Arrays.stream(sourcePattern.split("/"))
+            List<Pattern> patternPaths = Arrays.stream(sourcePattern.split(Pattern.quote(File.separator)))
                 .map(pathSplit -> Pattern.compile("^" + PlaceholderUtil.formatSourcePatternForRegex(pathSplit) + "$"))
                 .collect(Collectors.toList());
             Collections.reverse(patternPaths);
@@ -89,7 +71,7 @@ public class SourcesUtils {
             };
             ignorePredicate = ignorePatterns.stream()
                 .map(ignorePattern -> {
-                    List<String> ignorePatternPaths = placeholderUtil.formatForRegex(asList(ignorePattern.split("/")), false);
+                    List<String> ignorePatternPaths = placeholderUtil.formatForRegex(asList(ignorePattern.split(Pattern.quote(File.separator))), false);
                     Collections.reverse(ignorePatternPaths);
                     return ignorePatternPaths;
                 })

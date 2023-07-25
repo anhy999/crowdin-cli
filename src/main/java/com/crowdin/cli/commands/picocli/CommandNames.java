@@ -31,6 +31,7 @@ public final class CommandNames {
     public static final String STRING_DELETE = "delete";
     public static final String STRING_EDIT = "edit";
     public static final String STRING_LIST = "list";
+    public static final String STRING_COMMENT = "comment";
 
     public static final String BRANCH = "branch";
     public static final String BRANCH_ADD = "add";
@@ -52,4 +53,15 @@ public final class CommandNames {
     public static final String UPLOAD_TRANSLATIONS = "translations";
 
     public static final String PRE_TRANSLATE = "pre-translate";
+
+    public static final String TASK = "task";
+    public static final String TASK_LIST = "list";
+    public static final String TASK_ADD = "add";
+    public static final String BUNDLE = "bundle";
+    public static final String BUNDLE_LIST = "list";
+    public static final String BUNDLE_ADD = "add";
+
+    public static final String COMMENT = "comment";
+    public static final String COMMENT_LIST = "list";
+    public static final String COMMENT_RESOLVE = "resolve";
 }

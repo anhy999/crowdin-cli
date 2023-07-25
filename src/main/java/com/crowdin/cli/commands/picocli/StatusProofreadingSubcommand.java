@@ -12,14 +12,17 @@ import picocli.CommandLine;
 )
 class StatusProofreadingSubcommand extends ActCommandProject {
 
-    @CommandLine.Option(names = {"-l", "--language"}, paramLabel = "...")
+    @CommandLine.Option(names = {"-l", "--language"}, paramLabel = "...", order = -2)
     protected String languageId;
 
-    @CommandLine.Option(names = {"-b", "--branch"}, paramLabel = "...")
+    @CommandLine.Option(names = {"-b", "--branch"}, paramLabel = "...", order = -2)
     protected String branchName;
+
+    @CommandLine.Option(names = {"--fail-if-incomplete"}, paramLabel = "...", order = -2)
+    protected boolean failIfIncomplete;
 
     @Override
     protected NewAction<ProjectProperties, ProjectClient> getAction(Actions actions) {
-        return actions.status(noProgress, branchName, languageId, isVerbose, false, true);
+        return actions.status(noProgress, branchName, languageId, isVerbose, false, true, failIfIncomplete);
     }
 }

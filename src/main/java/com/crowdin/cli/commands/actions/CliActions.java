@@ -1,10 +1,7 @@
 package com.crowdin.cli.commands.actions;
 
 import com.crowdin.cli.BaseCli;
-import com.crowdin.cli.client.ClientGlossary;
-import com.crowdin.cli.client.ClientTm;
-import com.crowdin.cli.client.NoClient;
-import com.crowdin.cli.client.ProjectClient;
+import com.crowdin.cli.client.*;
 import com.crowdin.cli.commands.Actions;
 import com.crowdin.cli.commands.NewAction;
 import com.crowdin.cli.commands.functionality.FilesInterface;
@@ -15,6 +12,7 @@ import com.crowdin.cli.properties.PropertiesWithTargets;
 import com.crowdin.cli.properties.PropertiesWithFiles;
 import com.crowdin.client.core.model.Priority;
 import com.crowdin.client.glossaries.model.GlossariesFormat;
+import com.crowdin.client.stringcomments.model.IssueStatus;
 import com.crowdin.client.translationmemory.model.TranslationMemoryFormat;
 import com.crowdin.client.translations.model.AutoApproveOption;
 import com.crowdin.client.translations.model.Method;
@@ -28,10 +26,10 @@ public class CliActions implements Actions {
 
     @Override
     public NewAction<PropertiesWithFiles, ProjectClient> download(
-        FilesInterface files, boolean noProgress, String languageId, boolean pseudo, String branchName,
-        boolean ignoreMatch, boolean isVerbose, boolean plainView, boolean useServerSources
+        FilesInterface files, boolean noProgress, List<String> languageIds, List<String> excludeLanguageIds, boolean pseudo, String branchName,
+        boolean ignoreMatch, boolean isVerbose, boolean plainView, boolean useServerSources, boolean keepArchive
     ) {
-        return new DownloadAction(files, noProgress, languageId, pseudo, branchName, ignoreMatch, isVerbose, plainView, useServerSources);
+        return new DownloadAction(files, noProgress, languageIds, excludeLanguageIds, pseudo, branchName, ignoreMatch, isVerbose, plainView, useServerSources, keepArchive);
     }
 
     @Override
@@ -72,9 +70,9 @@ public class CliActions implements Actions {
 
     @Override
     public NewAction<ProjectProperties, ProjectClient> status(
-        boolean noProgress, String branchName, String languageId, boolean isVerbose, boolean showTranslated, boolean showApproved
+        boolean noProgress, String branchName, String languageId, boolean isVerbose, boolean showTranslated, boolean showApproved, boolean failIfIncomplete
     ) {
-        return new StatusAction(noProgress, branchName, languageId, isVerbose, showTranslated, showApproved);
+        return new StatusAction(noProgress, branchName, languageId, isVerbose, showTranslated, showApproved, failIfIncomplete);
     }
 
     @Override
@@ -82,6 +80,11 @@ public class CliActions implements Actions {
         boolean noProgress, String text, String identifier, Integer maxLength, String context, List<String> files, List<String> labelNames, Boolean hidden
     ) {
         return new StringAddAction(noProgress, text, identifier, maxLength, context, files, labelNames, hidden);
+    }
+    @Override
+    public NewAction<ProjectProperties, ProjectClient> stringComment(boolean plainView,
+            boolean noProgress, String text, String stringId, String language, String type, String issueType) {
+        return new StringCommentAction(plainView, noProgress, text, stringId, language, type, issueType);
     }
 
     @Override
@@ -157,6 +160,38 @@ public class CliActions implements Actions {
         String targetLanguageId, boolean noProgress, File to, FilesInterface files
     ) {
         return new TmDownloadAction(id, name, format, sourceLanguageId, targetLanguageId, noProgress, to, files);
+    }
+
+    @Override
+    public NewAction<ProjectProperties, ClientTask> taskList(boolean plainView, boolean isVerbose, String status, Long assigneeId) {
+        return new TaskListAction(plainView, isVerbose, status, assigneeId);
+    }
+
+    @Override
+    public NewAction<ProjectProperties, ClientTask> taskAdd(String title, Integer type, String language, List<Long> fileId, Long workflowStep, String description, boolean skipAssignedStrings, boolean skipUntranslatedStrings, List<Long> labels) {
+        return new TaskAddAction(title, type, language, fileId, workflowStep, description, skipAssignedStrings, skipUntranslatedStrings, labels);
+    }
+
+    @Override
+    public NewAction<ProjectProperties, ClientComment> commentList(boolean plainView, boolean isVerbose,String stringId,
+                                                                   com.crowdin.client.stringcomments.model.Type type, com.crowdin.client.issues.model.Type issueType,
+                                                                   IssueStatus status) {
+        return new CommentListAction(plainView, isVerbose, stringId, type, issueType, status);
+    }
+
+    @Override
+    public NewAction<ProjectProperties, ClientComment> resolve(Long id) {
+        return new CommentResolveAction(id);
+    }
+
+    @Override
+    public NewAction<ProjectProperties, ClientBundle> bundleList(boolean plainView, boolean isVerbose) {
+        return new BundleListAction(plainView);
+    }
+
+    @Override
+    public NewAction<ProjectProperties, ClientBundle> bundleAdd(String name, String format, List<String> source, List<String> ignore, String translation, List<Long> labels, boolean plainView) {
+        return new BundleAddAction(name, format, source, ignore, translation, labels, plainView);
     }
 
     @Override

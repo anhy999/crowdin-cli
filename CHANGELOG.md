@@ -1,5 +1,154 @@
 # Changelog
-All notable changes to this project will be documented in this file.
+
+# [3.13.0](https://github.com/crowdin/crowdin-cli/compare/3.12.0...3.13.0) (2023-06-12)
+
+
+### Bug Fixes
+
+* .env load - pass the cause exception for later retrieval ([#591](https://github.com/crowdin/crowdin-cli/issues/591)) ([fd0033d](https://github.com/crowdin/crowdin-cli/commit/fd0033d547981bf1b7866c964589b2e4e84ccb7b))
+* plain view for --keep-archive option ([#590](https://github.com/crowdin/crowdin-cli/issues/590)) ([7d33cb6](https://github.com/crowdin/crowdin-cli/commit/7d33cb65495fe6861ffce030f9ed31afd4c10bd8))
+
+
+### Features
+
+* Option to exclude some languages from the build ([#595](https://github.com/crowdin/crowdin-cli/issues/595)) ([325a014](https://github.com/crowdin/crowdin-cli/commit/325a01468783ab089a302b2ee22dc5d3f2285a29))
+
+# [3.12.0](https://github.com/crowdin/crowdin-cli/compare/3.11.1...3.12.0) (2023-05-30)
+
+
+### Bug Fixes
+
+* **config:** discrepancies and indentation ([#584](https://github.com/crowdin/crowdin-cli/issues/584)) ([728dc9c](https://github.com/crowdin/crowdin-cli/commit/728dc9c2477647f8671a3b8ca51a01b0b7b9cb7e))
+
+
+### Features
+
+* improve CLI messages ([#582](https://github.com/crowdin/crowdin-cli/issues/582)) ([99595eb](https://github.com/crowdin/crowdin-cli/commit/99595eb2ed69bb7297c65fb38b26357f37e60196))
+* New command: comment ([#588](https://github.com/crowdin/crowdin-cli/issues/588)) ([3aefca0](https://github.com/crowdin/crowdin-cli/commit/3aefca085382c6a16fd35a559b81471af5fea203))
+
+## [3.11.1](https://github.com/crowdin/crowdin-cli/compare/3.11.0...3.11.1) (2023-05-16)
+
+
+### Bug Fixes
+
+* download multiple sources with the same destination ([#574](https://github.com/crowdin/crowdin-cli/issues/574)) ([6f68e2a](https://github.com/crowdin/crowdin-cli/commit/6f68e2ad8b24f385db20ba7d0175576751bc6f15))
+* support double curly braces ([#572](https://github.com/crowdin/crowdin-cli/issues/572)) ([e3c20eb](https://github.com/crowdin/crowdin-cli/commit/e3c20eb27e7c33cf11c2a2c2821483c0a5acc9d3))
+
+# [3.11.0](https://github.com/crowdin/crowdin-cli/compare/3.10.1...3.11.0) (2023-04-24)
+
+
+### Bug Fixes
+
+* download sources with double asterisk ([#538](https://github.com/crowdin/crowdin-cli/issues/538)) ([88ae567](https://github.com/crowdin/crowdin-cli/commit/88ae5673ad6589abca849fcfa0559f242c532cc8))
+* handle upgrade subscription message ([#548](https://github.com/crowdin/crowdin-cli/issues/548)) ([59d0a84](https://github.com/crowdin/crowdin-cli/commit/59d0a841efa6d5447330e4f4b40efee308656238))
+* ignore option with double asterisk ([#568](https://github.com/crowdin/crowdin-cli/issues/568)) ([276d106](https://github.com/crowdin/crowdin-cli/commit/276d10677cfb10f84602f740d569a3217ddd12f0))
+* incorrect translation pattern on upload (windows) ([#544](https://github.com/crowdin/crowdin-cli/issues/544)) ([136ae16](https://github.com/crowdin/crowdin-cli/commit/136ae163f9f2a7e79e32d3e87af9b9b374c7123e))
+
+
+### Features
+
+* add bundle command support into cli ([#549](https://github.com/crowdin/crowdin-cli/issues/549)) ([d0f0be3](https://github.com/crowdin/crowdin-cli/commit/d0f0be3fbc22f6c658eee0ab97dbaea26390e4a5))
+* add more file formats support for the 'targets' command ([#545](https://github.com/crowdin/crowdin-cli/issues/545)) ([6b2f6d5](https://github.com/crowdin/crowdin-cli/commit/6b2f6d5232090f84216a1c59a786dc6f65453e99))
+* no preserve hierarchy for upload ([#541](https://github.com/crowdin/crowdin-cli/issues/541)) ([4a849a3](https://github.com/crowdin/crowdin-cli/commit/4a849a36c3e1b9dcb60db14bbb03a2e9e2978d01))
+
+## [3.10.1]
+
+### Fixed
+
+- fix delete obsolete option ([#536](https://github.com/crowdin/crowdin-cli/pull/536))
+- fix config file checker ([#532](https://github.com/crowdin/crowdin-cli/pull/532))
+- fix download sources command ([#537](https://github.com/crowdin/crowdin-cli/pull/537))
+- ignore content segmentation option when it's null ([#539](https://github.com/crowdin/crowdin-cli/pull/539))
+
+## [3.10.0]
+
+### Added
+
+- feat: implement tasks management ([#522](https://github.com/crowdin/crowdin-cli/pull/522))
+
+### Updated
+
+- perf: load all project info per branch ([#515](https://github.com/crowdin/crowdin-cli/pull/515))
+- ci: more automated publishing process ([#530](https://github.com/crowdin/crowdin-cli/pull/530))
+
+## [3.9.3]
+
+### Fixed
+
+- Fix node-fetch issue (2) ([#527](https://github.com/crowdin/crowdin-cli/pull/527))
+
+## [3.9.2]
+
+### Added
+
+- Add the `--keep-archive` option for the download translations command ([#520](https://github.com/crowdin/crowdin-cli/pull/520))
+- Helper script for Windows shell environments ([#521](https://github.com/crowdin/crowdin-cli/pull/521))
+
+### Updated
+
+- More tests for better coverage ([#509](https://github.com/crowdin/crowdin-cli/pull/509))
+- Minor cleanup ([#511](https://github.com/crowdin/crowdin-cli/pull/511))
+- Use GH Actions instead of Azure Pipelines and prepare CI to run Unit tests on Windows ([#512](https://github.com/crowdin/crowdin-cli/pull/512))
+- Ignore version check for -h,-v and crowdin command w/o args ([#516](https://github.com/crowdin/crowdin-cli/pull/516))
+- Handle empty files upload ([#517](https://github.com/crowdin/crowdin-cli/pull/517))
+
+### Fixed
+
+- Fix node-fetch issue ([#524](https://github.com/crowdin/crowdin-cli/pull/524))
+
+## [3.9.1]
+
+### Updated
+
+- Corrects misspellings ([#499](https://github.com/crowdin/crowdin-cli/pull/499))
+- Updating test coverage ([#500](https://github.com/crowdin/crowdin-cli/pull/500))
+- Increase test coverage ([#503](https://github.com/crowdin/crowdin-cli/pull/503))
+
+### Fixed
+
+- Fix organization domain extracting from base_url ([#498](https://github.com/crowdin/crowdin-cli/pull/498))
+
+## [3.9.0]
+
+### Added
+
+- Add downloading multiple specified languages ([#493](https://github.com/crowdin/crowdin-cli/pull/493))
+- Add '--dryrun' mode to the 'download sources' command ([#485](https://github.com/crowdin/crowdin-cli/pull/485))
+- Add the `export_string_that_passed_workflow` export option support ([#487](https://github.com/crowdin/crowdin-cli/pull/487))
+- Add Unit tests for `StatusAction.java` ([#494](https://github.com/crowdin/crowdin-cli/pull/494))
+
+### Updated
+
+- Improve async progress status checking for some commands ([#478](https://github.com/crowdin/crowdin-cli/pull/478))
+- Make lint throw error with no config file ([#483](https://github.com/crowdin/crowdin-cli/pull/483))
+
+### Fixed
+
+- Fixed regex to work correctly for Windows machines ([#484](https://github.com/crowdin/crowdin-cli/pull/484))
+
+## [3.8.1]
+
+### Fixed
+
+- Fix infinite build progress check in case of the build was failed ([#476](https://github.com/crowdin/crowdin-cli/pull/476))
+
+## [3.8.0]
+
+### Added
+
+- Download reviewed sources command ([#471](https://github.com/crowdin/crowdin-cli/pull/471))
+- `--fail-if-incomplete` option for status commands ([#466](https://github.com/crowdin/crowdin-cli/pull/466))
+- `branch` parameter support for Pseudo-Localization download ([#472](https://github.com/crowdin/crowdin-cli/pull/472))
+
+## [3.7.10]
+
+### Added
+
+- `import_translations` option support for spreadsheet files ([#463](https://github.com/crowdin/crowdin-cli/pull/463))
+
+### Updated
+
+- Improved error handling for the `pre-translate` command ([#461](https://github.com/crowdin/crowdin-cli/pull/461))
 
 ## [3.7.9]
 

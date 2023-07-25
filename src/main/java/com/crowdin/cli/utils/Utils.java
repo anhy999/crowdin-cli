@@ -25,7 +25,6 @@ import static com.crowdin.cli.utils.PlaceholderUtil.ESCAPE_ROUND_BRACKET_OPEN;
 import static com.crowdin.cli.utils.PlaceholderUtil.ROUND_BRACKET_CLOSE;
 import static com.crowdin.cli.utils.PlaceholderUtil.ROUND_BRACKET_OPEN;
 
-
 public class Utils {
 
     private static final String APPLICATION_BASE_URL = "application.base_url";
@@ -90,6 +89,10 @@ public class Utils {
         return (path != null) ? path.replaceAll("[\\\\/]+", "/") : null;
     }
 
+    public static String windowsPath(String path) {
+        return (path != null) ? path.replaceAll("[\\\\/]+", "\\\\") : null;
+    }
+
     public static String normalizePath(String path) {
         return (path != null) ? path.replaceAll("[\\\\/]+", Utils.PATH_SEPARATOR_REGEX) : null;
     }
@@ -120,8 +123,8 @@ public class Utils {
         }
     }
 
-    public static String joinPaths(String... pathes) {
-        return String.join(Utils.PATH_SEPARATOR, pathes).replaceAll("[\\\\/]+", Utils.PATH_SEPARATOR_REGEX);
+    public static String joinPaths(String... paths) {
+        return String.join(Utils.PATH_SEPARATOR, paths).replaceAll("[\\\\/]+", Utils.PATH_SEPARATOR_REGEX);
     }
 
     public static String[] splitPath(String path) {
@@ -147,7 +150,7 @@ public class Utils {
         }
         Integer port;
         try {
-            port = new Integer(System.getenv(HTTP_PROXY_PORT_ENV));
+            port = Integer.valueOf(System.getenv(HTTP_PROXY_PORT_ENV));
         } catch (NumberFormatException e) {
             return Optional.empty();
         }

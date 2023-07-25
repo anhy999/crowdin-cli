@@ -7,10 +7,14 @@ import com.crowdin.client.sourcefiles.model.AddBranchRequest;
 import com.crowdin.client.sourcefiles.model.AddDirectoryRequest;
 import com.crowdin.client.sourcefiles.model.AddFileRequest;
 import com.crowdin.client.sourcefiles.model.Branch;
+import com.crowdin.client.sourcefiles.model.BuildReviewedSourceFilesRequest;
 import com.crowdin.client.sourcefiles.model.Directory;
+import com.crowdin.client.sourcefiles.model.ReviewedStringsBuild;
 import com.crowdin.client.sourcefiles.model.UpdateFileRequest;
 import com.crowdin.client.sourcestrings.model.AddSourceStringRequest;
 import com.crowdin.client.sourcestrings.model.SourceString;
+import com.crowdin.client.stringcomments.model.AddStringCommentRequest;
+import com.crowdin.client.stringcomments.model.StringComment;
 import com.crowdin.client.translations.model.ApplyPreTranslationRequest;
 import com.crowdin.client.translations.model.BuildProjectTranslationRequest;
 import com.crowdin.client.translations.model.ExportProjectTranslationRequest;
@@ -25,7 +29,11 @@ import java.util.List;
 
 public interface ProjectClient extends Client {
 
-    CrowdinProjectFull downloadFullProject();
+    default CrowdinProjectFull downloadFullProject() {
+        return this.downloadFullProject(null);
+    }
+
+    CrowdinProjectFull downloadFullProject(String branchName);
 
     CrowdinProject downloadProjectWithLanguages();
 
@@ -37,7 +45,7 @@ public interface ProjectClient extends Client {
 
     List<Branch> listBranches();
 
-    Long uploadStorage(String fileName, InputStream content);
+    Long uploadStorage(String fileName, InputStream content) throws ResponseException;
 
     Directory addDirectory(AddDirectoryRequest request) throws ResponseException;
 
@@ -59,6 +67,12 @@ public interface ProjectClient extends Client {
 
     URL downloadBuild(Long buildId);
 
+    ReviewedStringsBuild startBuildingReviewedSources(BuildReviewedSourceFilesRequest request);
+
+    ReviewedStringsBuild checkBuildingReviewedSources(Long build);
+
+    URL downloadReviewedSourcesBuild(Long buildId);
+
     List<LanguageProgress> getProjectProgress(String languageId);
 
     List<LanguageProgress> getBranchProgress(Long branchId);
@@ -68,6 +82,8 @@ public interface ProjectClient extends Client {
     List<SourceString> listSourceString(Long fileId, Long branchId, String labelIds, String filter, String croql);
 
     void deleteSourceString(Long id);
+
+    StringComment commentString(AddStringCommentRequest request);
 
     SourceString editSourceString(Long sourceId, List<PatchRequest> requests);
 

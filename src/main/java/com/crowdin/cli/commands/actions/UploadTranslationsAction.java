@@ -20,7 +20,6 @@ import com.crowdin.cli.utils.console.ConsoleSpinner;
 import com.crowdin.client.languages.model.Language;
 import com.crowdin.client.sourcefiles.model.File;
 import com.crowdin.client.translations.model.UploadTranslationsRequest;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -67,7 +66,7 @@ class UploadTranslationsAction implements NewAction<PropertiesWithFiles, Project
     @Override
     public void act(Outputter out, PropertiesWithFiles pb, ProjectClient client) {
         CrowdinProjectFull project = ConsoleSpinner.execute(out, "message.spinner.fetching_project_info", "error.collect_project_info",
-            this.noProgress, this.plainView, client::downloadFullProject);
+            this.noProgress, this.plainView, () -> client.downloadFullProject(this.branchName));
 
         if (!project.isManagerAccess()) {
             if (!plainView) {
@@ -87,7 +86,7 @@ class UploadTranslationsAction implements NewAction<PropertiesWithFiles, Project
         List<Language> languages = (languageId != null)
             ? project.findLanguageById(languageId, true)
                 .map(Collections::singletonList)
-                .orElseThrow(() -> new RuntimeException(String.format(RESOURCE_BUNDLE.getString("error.not_found_language"), languageId)))
+                .orElseThrow(() -> new RuntimeException(String.format(RESOURCE_BUNDLE.getString("error.language_not_exist"), languageId)))
             : project.getProjectLanguages(false);
 
         for (FileBean file : pb.getFiles()) {

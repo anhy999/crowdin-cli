@@ -21,7 +21,6 @@ import com.crowdin.client.sourcefiles.model.Branch;
 import com.crowdin.client.translations.model.ExportProjectTranslationRequest;
 import lombok.NonNull;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
@@ -45,7 +44,7 @@ class DownloadTargetsAction implements NewAction<PropertiesWithTargets, ProjectC
     private FilesInterface files;
     private boolean noProgress;
     private List<String> langIds;
-    private boolean isVerbose;
+    private boolean isVerbose; // TODO: implement verbose
     private boolean plainView;
     private boolean debug;
     private String branchName;
@@ -70,16 +69,13 @@ class DownloadTargetsAction implements NewAction<PropertiesWithTargets, ProjectC
 
         CrowdinProjectFull project = ConsoleSpinner
             .execute(out, "message.spinner.fetching_project_info", "error.collect_project_info",
-                this.noProgress, this.plainView, client::downloadFullProject);
+                this.noProgress, this.plainView, () -> client.downloadFullProject(branchName));
 
         PlaceholderUtil placeholderUtil =
             new PlaceholderUtil(
                 project.getSupportedLanguages(), project.getProjectLanguages(true), pb.getBasePath());
 
-        if (StringUtils.isNotEmpty(branchName) && !project.findBranchByName(branchName).isPresent()) {
-            throw new RuntimeException(RESOURCE_BUNDLE.getString("error.not_found_branch"));
-        }
-        Optional<Long> branchId = project.findBranchByName(branchName).map(Branch::getId);
+        Optional<Long> branchId = Optional.ofNullable(project.getBranch()).map(Branch::getId);
 
         Map<String, Long> projectFiles = (branchId.isPresent()
             ? ProjectFilesUtils
@@ -122,23 +118,22 @@ class DownloadTargetsAction implements NewAction<PropertiesWithTargets, ProjectC
             .stream()
             .collect(Collectors.toMap(Language::getId, Function.identity()));
 
-        List<String> specifiedLangs;
+        List<String> specifiedLanguages;
         if ((langIds.size() == 1 && langIds.get(0).equals(BaseCli.ALL)) || langIds.isEmpty()) {
-            specifiedLangs = new ArrayList<>(projectLanguages.keySet());
+            specifiedLanguages = new ArrayList<>(projectLanguages.keySet());
         } else {
-            String unfoundLangs = langIds.stream()
+            String notFoundLanguages = langIds.stream()
                 .filter(lang -> !projectLanguages.containsKey(lang))
                 .map(lang -> "'" + lang + "'")
                 .collect(Collectors.joining(", "));
-            if (!unfoundLangs.isEmpty()) {
-                throw new RuntimeException(String.format(RESOURCE_BUNDLE.getString("error.languages_not_exist"), unfoundLangs));
+            if (!notFoundLanguages.isEmpty()) {
+                throw new RuntimeException(String.format(RESOURCE_BUNDLE.getString("error.languages_not_exist"), notFoundLanguages));
             } else {
-                specifiedLangs = langIds;
+                specifiedLanguages = langIds;
             }
         }
 
         for (TargetBean tb : targetBeans) {
-
             List<Runnable> tasks = tb.getFiles().stream()
                 .flatMap(fb -> {
                     List<String> errors = new ArrayList<>();
@@ -152,7 +147,7 @@ class DownloadTargetsAction implements NewAction<PropertiesWithTargets, ProjectC
                     Integer exportWithMinApprovalsCount = (fb.getExportApprovedOnly() != null && fb.getExportApprovedOnly()) ? 1 : null;
                     ExportProjectTranslationRequest templateRequest = (isOrganization)
                         ? RequestBuilder.exportProjectTranslation(
-                            exportFileFormat, fb.getSkipTranslatedOnly(), fb.getSkipUntranslatedFiles(), exportWithMinApprovalsCount)
+                            exportFileFormat, fb.getSkipTranslatedOnly(), fb.getSkipUntranslatedFiles(), exportWithMinApprovalsCount, fb.getExportStringsThatPassedWorkflow())
                         : RequestBuilder.exportProjectTranslation(
                             exportFileFormat, fb.getSkipTranslatedOnly(), fb.getSkipUntranslatedFiles(), fb.getExportApprovedOnly());
                     if (fb.getSources() != null && !fb.getSources().isEmpty()) {
@@ -203,7 +198,7 @@ class DownloadTargetsAction implements NewAction<PropertiesWithTargets, ProjectC
                     }
 
                     List<Pair<String, ExportProjectTranslationRequest>> builtRequests = new ArrayList<>();
-                    for (String langId : specifiedLangs) {
+                    for (String langId : specifiedLanguages) {
                         ExportProjectTranslationRequest request = RequestBuilder.exportProjectTranslation(templateRequest);
                         request.setTargetLanguageId(langId);
                         String targetFileLang = placeholderUtil.replaceLanguageDependentPlaceholders(fb.getFile(), project.getLanguageMapping(), projectLanguages.get(langId));
@@ -243,5 +238,4 @@ class DownloadTargetsAction implements NewAction<PropertiesWithTargets, ProjectC
             out.println(WARNING.withIcon(RESOURCE_BUNDLE.getString("message.no_targets_to_exec")));
         }
     }
-
 }

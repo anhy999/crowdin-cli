@@ -10,6 +10,11 @@ import com.crowdin.client.glossaries.model.ImportGlossaryRequest;
 import com.crowdin.client.labels.model.AddLabelRequest;
 import com.crowdin.client.sourcefiles.model.AddBranchRequest;
 import com.crowdin.client.sourcestrings.model.AddSourceStringRequest;
+import com.crowdin.client.stringcomments.model.AddStringCommentRequest;
+import com.crowdin.client.stringcomments.model.IssueStatus;
+import com.crowdin.client.stringcomments.model.Type;
+import com.crowdin.client.tasks.model.CrowdinTaskCreateFormRequest;
+import com.crowdin.client.tasks.model.EnterpriseTaskCreateFormRequest;
 import com.crowdin.client.translationmemory.model.AddTranslationMemoryRequest;
 import com.crowdin.client.translationmemory.model.TranslationMemoryExportRequest;
 import com.crowdin.client.translationmemory.model.TranslationMemoryFormat;
@@ -26,6 +31,7 @@ import com.crowdin.client.translations.model.UploadTranslationsRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class RequestBuilder {
 
@@ -38,6 +44,42 @@ public class RequestBuilder {
         request.setFileId(fileId);
         request.setIsHidden(hidden);
         request.setLabelIds(labelIds);
+        return request;
+    }
+
+    public static AddStringCommentRequest addComment(String text, String type, String language, String issueType,
+                                                     String stringId) {
+        AddStringCommentRequest request = new AddStringCommentRequest();
+        Optional.ofNullable(type).ifPresent(t -> request.setType(Type.from(t)));
+        Optional.ofNullable(stringId).ifPresent(id -> request.setStringId(Long.valueOf(id)));
+        request.setText(text);
+        request.setTargetLanguageId(language);
+        request.setIssueType(issueType);
+        return request;
+    }
+
+    public static CrowdinTaskCreateFormRequest addCrowdinTask(String title, Integer type, String languageId, List<Long> fileId, String description, boolean skipAssignedStrings, boolean skipUntranslatedStrings, List<Long> labelIds) {
+        CrowdinTaskCreateFormRequest request = new CrowdinTaskCreateFormRequest();
+        request.setTitle(title);
+        request.setType(type);
+        request.setLanguageId(languageId);
+        request.setFileIds(fileId);
+        request.setDescription(description);
+        request.setSkipAssignedStrings(skipAssignedStrings);
+        request.setSkipUntranslatedStrings(skipUntranslatedStrings);
+        request.setLabelIds(labelIds);
+        return request;
+    }
+
+    public static EnterpriseTaskCreateFormRequest addEnterpriseTask(String title, String languageId, List<Long> fileId, String description, boolean skipAssignedStrings, List<Long> labelIds, Long workflowStepId) {
+        EnterpriseTaskCreateFormRequest request = new EnterpriseTaskCreateFormRequest();
+        request.setTitle(title);
+        request.setLanguageId(languageId);
+        request.setFileIds(fileId);
+        request.setDescription(description);
+        request.setSkipAssignedStrings(skipAssignedStrings);
+        request.setLabelIds(labelIds);
+        request.setWorkflowStepId(workflowStepId);
         return request;
     }
 
@@ -134,13 +176,14 @@ public class RequestBuilder {
     }
 
     public static ExportProjectTranslationRequest exportProjectTranslation(
-        String format, Boolean skipUntranslatedStrings, Boolean skipUntranslatedFiles, Integer exportWithMinApprovalsCount
+        String format, Boolean skipUntranslatedStrings, Boolean skipUntranslatedFiles, Integer exportWithMinApprovalsCount, Boolean exportStringsThatPassedWorkflow
     ) {
         ExportProjectTranslationRequest request = new ExportProjectTranslationRequest();
         request.setFormat(format);
         request.setSkipUntranslatedStrings(skipUntranslatedStrings);
         request.setSkipUntranslatedFiles(skipUntranslatedFiles);
         request.setExportWithMinApprovalsCount(exportWithMinApprovalsCount);
+        request.setExportStringsThatPassedWorkflow(exportStringsThatPassedWorkflow);
         return request;
     }
 
@@ -156,7 +199,19 @@ public class RequestBuilder {
         copy.setSkipUntranslatedFiles(request.getSkipUntranslatedFiles());
         copy.setExportApprovedOnly(request.getExportApprovedOnly());
         copy.setExportWithMinApprovalsCount(request.getExportWithMinApprovalsCount());
+        copy.setExportStringsThatPassedWorkflow(request.getExportStringsThatPassedWorkflow());
         return copy;
+    }
+
+    public static CrowdinTranslationCraeteProjectPseudoBuildForm crowdinTranslationCreateProjectPseudoBuildForm(
+        long branchId, Boolean pseudo, Integer lengthCorrection, String prefix, String suffix, CharTransformation charTransformation
+    ) {
+        CrowdinTranslationCraeteProjectPseudoBuildForm request
+            = crowdinTranslationCreateProjectPseudoBuildForm(pseudo, lengthCorrection, prefix, suffix, charTransformation);
+
+        request.setBranchId(branchId);
+
+        return request;
     }
 
     public static CrowdinTranslationCraeteProjectPseudoBuildForm crowdinTranslationCreateProjectPseudoBuildForm(
@@ -181,6 +236,7 @@ public class RequestBuilder {
         requestCopy.setSkipUntranslatedFiles(request.getSkipUntranslatedFiles());
         requestCopy.setExportApprovedOnly(request.getExportApprovedOnly());
         requestCopy.setExportWithMinApprovalsCount(request.getExportWithMinApprovalsCount());
+        requestCopy.setExportStringsThatPassedWorkflow(request.getExportStringsThatPassedWorkflow());
         return requestCopy;
     }
 

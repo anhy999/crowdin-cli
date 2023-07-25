@@ -1,10 +1,7 @@
 package com.crowdin.cli.commands;
 
 import com.crowdin.cli.BaseCli;
-import com.crowdin.cli.client.ClientGlossary;
-import com.crowdin.cli.client.ClientTm;
-import com.crowdin.cli.client.NoClient;
-import com.crowdin.cli.client.ProjectClient;
+import com.crowdin.cli.client.*;
 import com.crowdin.cli.commands.functionality.FilesInterface;
 import com.crowdin.cli.properties.BaseProperties;
 import com.crowdin.cli.properties.ProjectProperties;
@@ -13,6 +10,8 @@ import com.crowdin.cli.properties.PropertiesWithTargets;
 import com.crowdin.cli.properties.PropertiesWithFiles;
 import com.crowdin.client.core.model.Priority;
 import com.crowdin.client.glossaries.model.GlossariesFormat;
+import com.crowdin.client.stringcomments.model.Type;
+import com.crowdin.client.stringcomments.model.IssueStatus;
 import com.crowdin.client.translationmemory.model.TranslationMemoryFormat;
 import com.crowdin.client.translations.model.AutoApproveOption;
 import com.crowdin.client.translations.model.Method;
@@ -25,8 +24,8 @@ import java.util.Map;
 public interface Actions {
 
     NewAction<PropertiesWithFiles, ProjectClient> download(
-        FilesInterface files, boolean noProgress, String languageId, boolean pseudo, String branchName,
-        boolean ignoreMatch, boolean isVerbose, boolean plainView, boolean userServerSources
+        FilesInterface files, boolean noProgress, List<String> languageIds, List<String> excludeLanguageIds, boolean pseudo, String branchName,
+        boolean ignoreMatch, boolean isVerbose, boolean plainView, boolean userServerSources, boolean keepArchive
     );
 
     NewAction<NoProperties, NoClient> generate(FilesInterface files, Path destinationPath, boolean skipGenerateDescription);
@@ -45,10 +44,13 @@ public interface Actions {
     NewAction<ProjectProperties, ProjectClient> listLanguages(BaseCli.LanguageCode code, boolean noProgress, boolean plainView);
 
     NewAction<ProjectProperties, ProjectClient> status(
-        boolean noProgress, String branchName, String languageId, boolean isVerbose, boolean showTranslated, boolean showApproved);
+        boolean noProgress, String branchName, String languageId, boolean isVerbose, boolean showTranslated, boolean showApproved, boolean failIfIncomplete);
 
     NewAction<ProjectProperties, ProjectClient> stringAdd(
         boolean noProgress, String text, String identifier, Integer maxLength, String context, List<String> files, List<String> labelNames, Boolean hidden);
+
+    NewAction<ProjectProperties, ProjectClient> stringComment(boolean plainView,
+        boolean noProgress, String text, String stringId, String language, String type, String issueType);
 
     NewAction<ProjectProperties, ProjectClient> stringDelete(
         boolean noProgress, List<Long> ids, List<String> texts, List<String> identifiers);
@@ -82,6 +84,18 @@ public interface Actions {
     NewAction<BaseProperties, ClientTm> tmDownload(
         Long id, String name, TranslationMemoryFormat format, String sourceLanguageId,
         String targetLanguageId, boolean noProgress, File to, FilesInterface files);
+
+    NewAction<ProjectProperties, ClientTask> taskList(boolean plainView, boolean isVerbose, String status, Long assigneeId);
+
+    NewAction<ProjectProperties, ClientTask> taskAdd(String title, Integer type, String language, List<Long> fileId, Long workflowStep, String description, boolean skipAssignedStrings, boolean skipUntranslatedStrings, List<Long> labels);
+
+    NewAction<ProjectProperties, ClientComment> commentList(boolean plainView, boolean isVerbose, String stringId, com.crowdin.client.stringcomments.model.Type type, com.crowdin.client.issues.model.Type issueType, IssueStatus status);
+
+    NewAction<ProjectProperties, ClientComment> resolve(Long id);
+
+    NewAction<ProjectProperties, ClientBundle> bundleList(boolean plainView, boolean isVerbose);
+
+    NewAction<ProjectProperties, ClientBundle> bundleAdd(String name, String format, List<String> source, List<String> ignore, String translation, List<Long> labels, boolean plainView);
 
     NewAction<PropertiesWithTargets, ProjectClient> downloadTargets(
         List<String> targetNames, FilesInterface files, boolean noProgress,

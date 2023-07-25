@@ -1,6 +1,7 @@
 package com.crowdin.cli.commands.actions;
 
 import com.crowdin.cli.client.CrowdinProjectFull;
+import com.crowdin.cli.client.EmptyFileException;
 import com.crowdin.cli.client.ExistsResponseException;
 import com.crowdin.cli.client.ProjectClient;
 import com.crowdin.cli.commands.NewAction;
@@ -38,7 +39,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -138,7 +138,8 @@ class UploadSourcesAction implements NewAction<PropertiesWithFiles, ProjectClien
                             : StringUtils.removeStart(source, pb.getBasePath() + commonPath))
                         .collect(Collectors.toList());
                     if (file.getDest() != null) {
-                        deleteObsoleteProjectFilesSubAction.act(file.getDest(), file.getTranslation(), filesToUpdate);
+                        String sourcePattern = PropertiesBeanUtils.prepareDest(file.getDest(), StringUtils.removeStart(file.getSource(), pb.getBasePath()), placeholderUtil);
+                        deleteObsoleteProjectFilesSubAction.act(sourcePattern, file.getTranslation(), filesToUpdate);
                     } else {
                         deleteObsoleteProjectFilesSubAction.act(file.getSource(), file.getIgnore(), file.getTranslation(), filesToUpdate);
                     }
@@ -260,6 +261,10 @@ class UploadSourcesAction implements NewAction<PropertiesWithFiles, ProjectClien
 
                                 try (InputStream fileStream = new FileInputStream(sourceFile)) {
                                     request.setStorageId(client.uploadStorage(source.substring(source.lastIndexOf(Utils.PATH_SEPARATOR) + 1), fileStream));
+                                } catch (EmptyFileException e){
+                                    errorsPresented.set(false);
+                                    out.println(SKIPPED.withIcon(String.format(RESOURCE_BUNDLE.getString("message.uploading_file_skipped"), fileFullPath)));
+                                    return;
                                 } catch (Exception e) {
                                     errorsPresented.set(true);
                                     throw new RuntimeException(
@@ -299,7 +304,7 @@ class UploadSourcesAction implements NewAction<PropertiesWithFiles, ProjectClien
             deleteObsoleteProjectFilesSubAction.postAct();
         }
         if (errorsPresented.get()) {
-            throw new RuntimeException(RESOURCE_BUNDLE.getString("error.errors_presented"));
+            throw new RuntimeException(RESOURCE_BUNDLE.getString("error.execution_contains_errors"));
         }
     }
 
@@ -308,6 +313,7 @@ class UploadSourcesAction implements NewAction<PropertiesWithFiles, ProjectClien
             SpreadsheetFileImportOptions importOptions = new SpreadsheetFileImportOptions();
             importOptions.setFirstLineContainsHeader(fileBean.getFirstLineContainsHeader());
             importOptions.setScheme(PropertiesBeanUtils.getSchemeObject(fileBean.getScheme()));
+            importOptions.setImportTranslations(fileBean.getImportTranslations());
             return importOptions;
         } else if (isXml(sourceFile)) {
             XmlFileImportOptions importOptions = new XmlFileImportOptions();

@@ -14,7 +14,7 @@ public class CliActionsTest {
 
     @Test
     public void testDownload() {
-        assertNotNull(actions.download(new FsFiles(), false, null, false, null, false, false, false, false));
+        assertNotNull(actions.download(new FsFiles(), false, null, null, false, null, false, false, false, false, false));
     }
 
     @Test
@@ -44,7 +44,7 @@ public class CliActionsTest {
 
     @Test
     public void testStatus() {
-        assertNotNull(actions.status(false, null, null, false, false, false));
+        assertNotNull(actions.status(false, null, null, false, false, false, false));
     }
 
     @Test

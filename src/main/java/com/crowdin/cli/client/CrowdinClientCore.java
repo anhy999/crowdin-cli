@@ -5,11 +5,11 @@ import com.crowdin.client.core.http.exceptions.HttpException;
 import com.crowdin.client.core.model.DownloadLink;
 import com.crowdin.client.core.model.ResponseList;
 import com.crowdin.client.core.model.ResponseObject;
-import com.crowdin.client.storage.model.Storage;
+import com.crowdin.client.stringcomments.model.AddStringCommentRequest;
+import com.crowdin.client.stringcomments.model.StringComment;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +31,8 @@ abstract class CrowdinClientCore {
         new LinkedHashMap<BiPredicate<String, String>, RuntimeException>() {{
             put((code, message) -> code.equals("401"),
                 new RuntimeException(RESOURCE_BUNDLE.getString("error.response.401")));
+            put((code, message) -> code.equals("403") && message.contains("upgrade your subscription plan to upload more file formats"),
+                    new RuntimeException(RESOURCE_BUNDLE.getString("error.response.403_upgrade_subscription")));
             put((code, message) -> code.equals("403"),
                 new RuntimeException(RESOURCE_BUNDLE.getString("error.response.403")));
             put((code, message) -> code.equals("404") && StringUtils.containsIgnoreCase(message, "Project Not Found"),

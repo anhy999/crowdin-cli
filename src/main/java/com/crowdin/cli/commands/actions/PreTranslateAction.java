@@ -67,7 +67,7 @@ class PreTranslateAction implements NewAction<PropertiesWithFiles, ProjectClient
     @Override
     public void act(Outputter out, PropertiesWithFiles properties, ProjectClient client) {
         CrowdinProjectFull project = ConsoleSpinner.execute(out, "message.spinner.fetching_project_info", "error.collect_project_info",
-            this.noProgress, this.plainView, client::downloadFullProject);
+            this.noProgress, this.plainView, () -> client.downloadFullProject(this.branchName));
 
         List<String> languages = this.prepareLanguageIds(project);
         List<Long> fileIds = this.prepareFileIds(out, properties, project);
@@ -79,8 +79,8 @@ class PreTranslateAction implements NewAction<PropertiesWithFiles, ProjectClient
         ApplyPreTranslationRequest request = RequestBuilder.applyPreTranslation(
             languages, fileIds, method, engineId, autoApproveOption,
             duplicateTranslations, translateUntranslatedOnly, translateWithPerfectMatchOnly);
-        this.applyPreTranslation(out, client, request);
 
+        this.applyPreTranslation(out, client, request);
     }
 
     private List<String> prepareLanguageIds(CrowdinProjectInfo projectInfo) {
@@ -141,19 +141,33 @@ class PreTranslateAction implements NewAction<PropertiesWithFiles, ProjectClient
             .collect(Collectors.toList());
     }
 
-    private PreTranslationStatus applyPreTranslation(Outputter out, ProjectClient client,ApplyPreTranslationRequest request) {
-        return ConsoleSpinner.execute(out, "message.spinner.pre_translate", "error.spinner.pre_translate", this.noProgress, this.plainView, () -> {
-            PreTranslationStatus preTranslationStatus = client.startPreTranslation(request);
+    private void applyPreTranslation(Outputter out, ProjectClient client, ApplyPreTranslationRequest request) {
+        ConsoleSpinner.execute(
+            out,
+            "message.spinner.pre_translate",
+            "error.spinner.pre_translate",
+            this.noProgress,
+            this.plainView,
+            () -> {
+                PreTranslationStatus preTranslationStatus = client.startPreTranslation(request);
 
-            while (!preTranslationStatus.getStatus().equalsIgnoreCase("finished")) {
-                ConsoleSpinner.update(
-                    String.format(RESOURCE_BUNDLE.getString("message.spinner.pre_translate_percents"),
-                        Math.toIntExact(preTranslationStatus.getProgress())));
-                Thread.sleep(100);
-                preTranslationStatus = client.checkPreTranslation(preTranslationStatus.getIdentifier());
+                while (!preTranslationStatus.getStatus().equalsIgnoreCase("finished")) {
+                    ConsoleSpinner.update(
+                            String.format(RESOURCE_BUNDLE.getString("message.spinner.pre_translate_percents"),
+                                    Math.toIntExact(preTranslationStatus.getProgress())));
+                    Thread.sleep(1000);
+
+                    preTranslationStatus = client.checkPreTranslation(preTranslationStatus.getIdentifier());
+
+                    if (preTranslationStatus.getStatus().equalsIgnoreCase("failed")) {
+                        throw new RuntimeException();
+                    }
+                }
+
+                ConsoleSpinner.update(String.format(RESOURCE_BUNDLE.getString("message.spinner.pre_translate_done"), 100));
+
+                return preTranslationStatus;
             }
-            ConsoleSpinner.update(String.format(RESOURCE_BUNDLE.getString("message.spinner.pre_translate_done"), 100));
-            return preTranslationStatus;
-        });
+        );
     }
 }

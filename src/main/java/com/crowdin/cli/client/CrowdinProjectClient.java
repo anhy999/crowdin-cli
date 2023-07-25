@@ -8,11 +8,15 @@ import com.crowdin.client.sourcefiles.model.AddBranchRequest;
 import com.crowdin.client.sourcefiles.model.AddDirectoryRequest;
 import com.crowdin.client.sourcefiles.model.AddFileRequest;
 import com.crowdin.client.sourcefiles.model.Branch;
+import com.crowdin.client.sourcefiles.model.BuildReviewedSourceFilesRequest;
 import com.crowdin.client.sourcefiles.model.Directory;
+import com.crowdin.client.sourcefiles.model.ReviewedStringsBuild;
 import com.crowdin.client.sourcefiles.model.UpdateFileRequest;
 import com.crowdin.client.sourcestrings.model.AddSourceStringRequest;
 import com.crowdin.client.sourcestrings.model.SourceString;
 import com.crowdin.client.storage.model.Storage;
+import com.crowdin.client.stringcomments.model.AddStringCommentRequest;
+import com.crowdin.client.stringcomments.model.StringComment;
 import com.crowdin.client.translations.model.ApplyPreTranslationRequest;
 import com.crowdin.client.translations.model.BuildProjectTranslationRequest;
 import com.crowdin.client.translations.model.ExportProjectTranslationRequest;
@@ -27,7 +31,10 @@ import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiPredicate;
+
+import static com.crowdin.cli.BaseCli.RESOURCE_BUNDLE;
 
 class CrowdinProjectClient extends CrowdinClientCore implements ProjectClient {
 
@@ -40,11 +47,11 @@ class CrowdinProjectClient extends CrowdinClientCore implements ProjectClient {
     }
 
     @Override
-    public CrowdinProjectFull downloadFullProject() {
+    public CrowdinProjectFull downloadFullProject(String branchName) {
         CrowdinProjectFull project = new CrowdinProjectFull();
         this.populateProjectWithInfo(project);
         this.populateProjectWithLangs(project);
-        this.populateProjectWithStructure(project);
+        this.populateProjectWithStructure(project, branchName);
         return project;
     }
 
@@ -63,12 +70,18 @@ class CrowdinProjectClient extends CrowdinClientCore implements ProjectClient {
         return project;
     }
 
-    private void populateProjectWithStructure(CrowdinProjectFull project) {
-        project.setFiles(executeRequestFullList((limit, offset) -> this.client.getSourceFilesApi()
-            .listFiles(this.projectId, null, null, null, null, limit, offset)));
-        project.setDirectories(executeRequestFullList((limit, offset) -> this.client.getSourceFilesApi()
-            .listDirectories(this.projectId, null, null, null, limit, offset)));
+    private void populateProjectWithStructure(CrowdinProjectFull project, String branchName) {
         project.setBranches(this.listBranches());
+        Optional.ofNullable(branchName)
+                .map(name -> project.findBranchByName(name)
+                        .orElseThrow(() -> new RuntimeException(RESOURCE_BUNDLE.getString("error.not_found_branch")))
+                )
+                .ifPresent(project::setBranch);
+        Long branchId = Optional.ofNullable(project.getBranch()).map(Branch::getId).orElse(null);
+        project.setFiles(executeRequestFullList((limit, offset) -> this.client.getSourceFilesApi()
+            .listFiles(this.projectId, branchId, null, null, true, limit, offset)));
+        project.setDirectories(executeRequestFullList((limit, offset) -> this.client.getSourceFilesApi()
+            .listDirectories(this.projectId, branchId, null, null, true, limit, offset)));
     }
 
     private void populateProjectWithLangs(CrowdinProject project) {
@@ -79,12 +92,16 @@ class CrowdinProjectClient extends CrowdinClientCore implements ProjectClient {
     private void populateProjectWithInfo(CrowdinProjectInfo project) {
         com.crowdin.client.projectsgroups.model.Project projectModel = this.getProject();
         project.setProjectId(projectModel.getId());
+        project.setSourceLanguageId(projectModel.getSourceLanguageId());
         project.setProjectLanguages(projectModel.getTargetLanguages());
         if (projectModel instanceof ProjectSettings) {
             project.setAccessLevel(CrowdinProjectInfo.Access.MANAGER);
             ProjectSettings projectSettings = (ProjectSettings) projectModel;
             if (projectSettings.getInContext() != null && projectSettings.getInContext()) {
                 project.setInContextLanguage(projectSettings.getInContextPseudoLanguage());
+            }
+            if (projectSettings.getSkipUntranslatedFiles() != null && projectSettings.getSkipUntranslatedFiles()) {
+                project.setSkipUntranslatedFiles(projectSettings.getSkipUntranslatedFiles());
             }
             project.setLanguageMapping(LanguageMapping.fromServerLanguageMapping(projectSettings.getLanguageMapping()));
         } else {
@@ -134,8 +151,12 @@ class CrowdinProjectClient extends CrowdinClientCore implements ProjectClient {
     }
 
     @Override
-    public Long uploadStorage(String fileName, InputStream content) {
-        Storage storage = executeRequest(() -> this.client.getStorageApi()
+    public Long uploadStorage(String fileName, InputStream content) throws  ResponseException {
+        Map<BiPredicate<String, String>, ResponseException> errorHandlers = new LinkedHashMap<BiPredicate<String, String>, ResponseException>() {{
+            put((code, message) -> StringUtils.containsAny(message, "streamIsEmpty", "Stream size is null. Not empty content expected"),
+                    new EmptyFileException("Not empty content expected"));
+        }};
+        Storage storage = executeRequest(errorHandlers, () -> this.client.getStorageApi()
             .addStorage(fileName, content)
             .getData());
         return storage.getId();
@@ -181,6 +202,7 @@ class CrowdinProjectClient extends CrowdinClientCore implements ProjectClient {
             put((code, message) -> message.contains("File from storage with id #" + request.getStorageId() + " was not found"), new RepeatException());
             put((code, message) -> StringUtils.contains(message, "Name must be unique"), new ExistsResponseException());
             put((code, message) -> StringUtils.contains(message, "Invalid SRX specified"), new ResponseException("Invalid SRX file specified"));
+            put((code, message) -> StringUtils.containsAny(message, "isEmpty", "Value is required and can't be empty"), new EmptyFileException("Value is required and can't be empty"));
         }};
         executeRequestWithPossibleRetry(
             errorHandlers,
@@ -239,6 +261,27 @@ class CrowdinProjectClient extends CrowdinClientCore implements ProjectClient {
     }
 
     @Override
+    public ReviewedStringsBuild startBuildingReviewedSources(BuildReviewedSourceFilesRequest request) {
+        return executeRequest(() -> this.client.getSourceFilesApi()
+                .buildReviewedSourceFiles(this.projectId, request)
+                .getData());
+    }
+
+    @Override
+    public ReviewedStringsBuild checkBuildingReviewedSources(Long buildId) {
+        return executeRequest(() -> this.client.getSourceFilesApi()
+                .checkReviewedSourceFilesBuildStatus(projectId, buildId)
+                .getData());
+    }
+
+    @Override
+    public URL downloadReviewedSourcesBuild(Long buildId) {
+        return url(executeRequest(() -> this.client.getSourceFilesApi()
+                .downloadReviewedSourceFiles(this.projectId, buildId)
+                .getData()));
+    }
+
+    @Override
     public SourceString addSourceString(AddSourceStringRequest request) {
         return executeRequest(() -> this.client.getSourceStringsApi()
             .addSourceString(this.projectId, request)
@@ -258,6 +301,13 @@ class CrowdinProjectClient extends CrowdinClientCore implements ProjectClient {
                 .deleteSourceString(this.projectId, sourceId);
             return true;
         });
+    }
+
+    @Override
+    public StringComment commentString(AddStringCommentRequest request) {
+        return executeRequest(() -> this.client.getStringCommentsApi()
+                                               .addStringComment(this.projectId, request)
+                                               .getData());
     }
 
     @Override

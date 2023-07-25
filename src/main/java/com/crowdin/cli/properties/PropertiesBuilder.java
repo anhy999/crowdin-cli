@@ -112,6 +112,8 @@ public abstract class PropertiesBuilder<T extends Properties, P extends Params> 
 
     public static final String EXPORT_APPROVED_ONLY = "export_only_approved";
 
+    public static final String EXPORT_STRINGS_THAT_PASSED_WORKFLOW = "export_strings_that_passed_workflow";
+
     public static final String EXCLUDED_TARGET_LANGUAGES = "excluded_target_languages";
 
     public static final String CUSTOM_SEGMENTATION = "custom_segmentation";
@@ -121,6 +123,8 @@ public abstract class PropertiesBuilder<T extends Properties, P extends Params> 
     public static final String IGNORE_HIDDEN_FILES = "ignore_hidden_files";
 
     public static final String CONFIG_FILE_PATH = "config_file_path";
+
+    public static final String IMPORT_TRANSLATIONS = "import_translations";
 
     private Outputter out;
     private Map<String, Object> configFileParams;
@@ -233,7 +237,7 @@ public abstract class PropertiesBuilder<T extends Properties, P extends Params> 
                 dotenv = Dotenv.configure().ignoreIfMissing().load();
             } catch (IllegalStateException e) {
                 if (e.getMessage() != null && e.getMessage().contains("Duplicate key")) {
-                    throw new RuntimeException(RESOURCE_BUNDLE.getString("error.duplicate_environment_variable"));
+                    throw new RuntimeException(RESOURCE_BUNDLE.getString("error.duplicate_environment_variable"), e);
                 } else {
                     throw e;
                 }
